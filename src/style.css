@@ -1,0 +1,28 @@
+html, body, #app, #c{
+    margin: 0;
+    padding: 0;
+}
+
+#app, #c{
+    width: 100vh;
+    height: 100vw;
+}
+
+.split{
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+}
+
+.split>div{
+    width: 100%;
+    height: 100%;
+}
+
+
+
+
+

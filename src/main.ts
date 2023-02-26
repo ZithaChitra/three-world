@@ -1,23 +1,49 @@
 import './style.css'
-import typescriptLogo from './typescript.svg'
-import { setupCounter } from './counter'
+import { World } from './world'
+import { sceneObjects, animatedObjsModelsPaths } from './store'
+import { gltfLoadHandler } from './models/utils/gltf'
+import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
-  </div>
-`
+interface sceneObjects {
+    calculatedObjs: any[];
+    controlledObjs: any[];
+}
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+let _world = new World()
+window.world = _world
+let app = document.getElementById('app')!
+
+window.sceneObjects = sceneObjects
+
+window.world.addObjectsArrayToScene(window.sceneObjects.calculatedObjs)
+
+window.world.addWorldToCanv(app)
+window.world.render()
+
+document.addEventListener('controlledObjectsLoaded', () => {
+    console.log('controlledObjectsLoaded event handler')
+    console.log('controlled objects global: ', sceneObjects.controlledObjs)
+    window.world.render()
+})
+
+// loadControlledModels()
+
+function loadControlledModels(){
+    document.addEventListener('controlledObjectAdded', () => {
+        if(window.sceneObjects.controlledObjs.length != animatedObjsModelsPaths.length){
+            console.log('controlled object added: not done loading')
+            return
+        }else{
+            console.log('controlled object added: done loading')
+            let event = new Event('controlledObjectsLoaded')
+            document.dispatchEvent(event)
+            return
+        }
+    })
+
+    animatedObjsModelsPaths.forEach(objPath => {
+        let loader = new GLTFLoader()
+        loader.load(objPath, (gltf: GLTF) => gltfLoadHandler(gltf))
+    })
+}
+
