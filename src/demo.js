@@ -2,39 +2,27 @@
 // from https://threejs.org/manual/examples/cameras-perspective-2-scenes.html
 
 
-import {
-  WebGLRenderer, PerspectiveCamera, CameraHelper, RepeatWrapping, NearestFilter,
-  DoubleSide, Color, Scene, TextureLoader, PlaneGeometry, MeshPhongMaterial, Mesh,
-  BoxGeometry, SphereGeometry, DirectionalLight, MeshStandardMaterial
-
-} from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { GUI } from 'lil-gui'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GUI} from 'three/addons/libs/lil-gui.module.min.js';
 
 function main() {
-  const canvas = document.querySelector('#c')!;
-  const view1Elem = document.querySelector('#view1')!;
-  const view2Elem = document.querySelector('#view2')!;
-  const renderer = new WebGLRenderer({antialias: true, canvas});
+  const canvas = document.querySelector('#c');
+  const view1Elem = document.querySelector('#view1');
+  const view2Elem = document.querySelector('#view2');
+  const renderer = new THREE.WebGLRenderer({antialias: true, canvas});
 
   const fov = 45;
   const aspect = 2;  // the canvas default
   const near = 5;
   const far = 100;
-  const camera = new PerspectiveCamera(fov, aspect, near, far);
+  const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera.position.set(0, 10, 20);
 
-  const cameraHelper = new CameraHelper(camera);
+  const cameraHelper = new THREE.CameraHelper(camera);
 
   class MinMaxGUIHelper {
-    obj: any
-    minProp: any
-    maxProp: any
-    minDif: any
-
-
-    constructor(obj: any, minProp: any, maxProp: any, minDif: any) {
+    constructor(obj, minProp, maxProp, minDif) {
       this.obj = obj;
       this.minProp = minProp;
       this.maxProp = maxProp;
@@ -57,19 +45,16 @@ function main() {
   }
 
   const gui = new GUI();
-  gui.onChange(() => render());
   gui.add(camera, 'fov', 1, 180);
   const minMaxGUIHelper = new MinMaxGUIHelper(camera, 'near', 'far', 0.1);
   gui.add(minMaxGUIHelper, 'min', 0.1, 50, 0.1).name('near');
   gui.add(minMaxGUIHelper, 'max', 0.1, 50, 0.1).name('far');
 
-  const controls = new OrbitControls(camera, (view1Elem as HTMLElement));
+  const controls = new OrbitControls(camera, view1Elem);
   controls.target.set(0, 5, 0);
   controls.update();
 
-  controls.addEventListener('change', () => render())
-
-  const camera2 = new PerspectiveCamera(
+  const camera2 = new THREE.PerspectiveCamera(
     60,  // fov
     2,   // aspect
     0.1, // near
@@ -78,60 +63,64 @@ function main() {
   camera2.position.set(40, 10, 30);
   camera2.lookAt(0, 5, 0);
 
-  const controls2 = new OrbitControls(camera2, (view2Elem as HTMLElement));
+  const controls2 = new OrbitControls(camera2, view2Elem);
   controls2.target.set(0, 5, 0);
   controls2.update();
 
-  controls2.addEventListener('change', () => render())
-
-  const scene = new Scene();
-  scene.background = new Color('black');
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('black');
   scene.add(cameraHelper);
 
   {
     const planeSize = 40;
 
+    const loader = new THREE.TextureLoader();
+    const texture = loader.load('https://threejs.org/manual/examples/resources/images/checker.png');
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.magFilter = THREE.NearestFilter;
+    const repeats = planeSize / 2;
+    texture.repeat.set(repeats, repeats);
 
-    const plane = new Mesh(
-      new PlaneGeometry(planeSize, planeSize, 1, 1),
-      new MeshStandardMaterial({color: 0x202020})
-    )
-  
-  
-    plane.castShadow    = false
-    plane.receiveShadow = true
-    plane.rotation.x    = Math.PI * -.5;
-
-    scene.add(plane)
+    const planeGeo = new THREE.PlaneGeometry(planeSize, planeSize);
+    const planeMat = new THREE.MeshPhongMaterial({
+      map: texture,
+      side: THREE.DoubleSide,
+    });
+    const mesh = new THREE.Mesh(planeGeo, planeMat);
+    mesh.rotation.x = Math.PI * -.5;
+    scene.add(mesh);
+  }
+  {
+    const cubeSize = 4;
+    const cubeGeo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+    const cubeMat = new THREE.MeshPhongMaterial({color: '#8AC'});
+    const mesh = new THREE.Mesh(cubeGeo, cubeMat);
+    mesh.position.set(cubeSize + 1, cubeSize / 2, 0);
+    scene.add(mesh);
+  }
+  {
+    const sphereRadius = 3;
+    const sphereWidthDivisions = 32;
+    const sphereHeightDivisions = 16;
+    const sphereGeo = new THREE.SphereGeometry(sphereRadius, sphereWidthDivisions, sphereHeightDivisions);
+    const sphereMat = new THREE.MeshPhongMaterial({color: '#CA8'});
+    const mesh = new THREE.Mesh(sphereGeo, sphereMat);
+    mesh.position.set(-sphereRadius - 1, sphereRadius + 2, 0);
+    scene.add(mesh);
   }
 
   {
     const color = 0xFFFFFF;
     const intensity = 1;
-    const light = new DirectionalLight(color, intensity);
+    const light = new THREE.DirectionalLight(color, intensity);
     light.position.set(0, 10, 0);
     light.target.position.set(-5, 0, 0);
     scene.add(light);
     scene.add(light.target);
   }
 
-
-  {
-      const loader = new GLTFLoader()
-      loader.load('/models/Soldier.glb', (gltf) => {
-        const model = gltf.scene
-        model.scale.setScalar(3)
-        model.traverse(function(object: any){
-          if (object.isMesh) object.castShadow = true
-        })
-        scene.add(model)
-
-
-      })
-
-  }
-
-  function resizeRendererToDisplaySize(renderer: any) {
+  function resizeRendererToDisplaySize(renderer) {
     const canvas = renderer.domElement;
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
@@ -142,10 +131,10 @@ function main() {
     return needResize;
   }
 
-  function setScissorForElement(elem: any) {
+  function setScissorForElement(elem) {
     const canvasRect = canvas.getBoundingClientRect();
     const elemRect = elem.getBoundingClientRect();
-      
+
     // compute a canvas relative rectangle
     const right = Math.min(elemRect.right, canvasRect.right) - canvasRect.left;
     const left = Math.max(0, elemRect.left - canvasRect.left);
@@ -183,8 +172,7 @@ function main() {
       // don't draw the camera helper in the original view
       cameraHelper.visible = false;
 
-      // scene.background.set(0x000000);
-      scene.background = new Color(0x000000)
+      scene.background.set(0x000000);
 
       // render
       renderer.render(scene, camera);
@@ -196,22 +184,20 @@ function main() {
 
       // adjust the camera for this aspect
       camera2.aspect = aspect;
-      camera2.updateProjectionMatrix();  //   const sphereRadius = 3;
-    
+      camera2.updateProjectionMatrix();
 
       // draw the camera helper in the 2nd view
       cameraHelper.visible = true;
 
-      scene.background = new Color(0x000040);
+      scene.background.set(0x000040);
 
       renderer.render(scene, camera2);
     }
 
-    // requestAnimationFrame(render);
+    requestAnimationFrame(render);
   }
-  render()
 
-  // requestAnimationFrame(render);
+  requestAnimationFrame(render);
 }
 
 main();

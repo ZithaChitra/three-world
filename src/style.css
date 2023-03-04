@@ -1,19 +1,22 @@
-html, body, #app, #c{
+html, body{
     margin: 0;
     padding: 0;
+    height: 100%;
 }
 
-#app, #c{
-    width: 100vh;
-    height: 100vw;
+#c{
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    display: block;
 }
 
 .split{
     position: absolute;
     left: 0;
     top: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     display: flex;
 }
 

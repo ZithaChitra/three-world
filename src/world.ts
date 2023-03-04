@@ -1,6 +1,6 @@
 import {
     WebGLRenderer, PerspectiveCamera, Scene, Clock,
-    DirectionalLight, AmbientLight, CameraHelper,
+    DirectionalLight, AmbientLight, CameraHelper, Color,
 } from 'three'
 import GUI from 'lil-gui'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -17,6 +17,11 @@ export class World {
     _camera2!:   PerspectiveCamera
     _controls2!: OrbitControls
 
+    view1Elem!: HTMLElement
+    view2Elem!: HTMLElement
+
+    cameraHelper!: CameraHelper
+
     clock: Clock            = new Clock()
 
     constructor(){
@@ -24,9 +29,11 @@ export class World {
     }
 
     __init(){
-        this._renderer = new WebGLRenderer({antialias: true}) 
+        const canvas = document.querySelector('#c')!
+        this._renderer = new WebGLRenderer({antialias: true, canvas: (canvas as HTMLElement)}) 
+        // console.log(this._renderer)
         this._renderer.shadowMap.enabled = true
-        this._renderer.setSize(window.innerWidth, window.innerHeight)
+        // this._renderer.setSize(window.innerWidth, window.innerHeight)
 
         this._scene = new Scene()
 
@@ -45,16 +52,14 @@ export class World {
         camProps.add(minMaxGUIHelper, 'max', 0.1, 50, 0.1).name('far')
         camProps.close()
 
-        const cameraHelper = new CameraHelper(this._camera) // draws the frustrum of cam
-        this._scene.add(cameraHelper)
+        this.cameraHelper = new CameraHelper(this._camera) // draws the frustrum of cam
+        this._scene.add(this.cameraHelper)
 
-        const view1Elem = document.querySelector('#view1')!
-        const view2Elem = document.querySelector('#view2')!
+        this.view1Elem = document.querySelector('#view1')!
+        this.view2Elem = document.querySelector('#view2')!
 
 
-        this._controls = new OrbitControls(
-            this._camera, (view1Elem as HTMLElement)
-        )
+        this._controls = new OrbitControls(this._camera, this.view1Elem)
         this._controls.target.set(0, 5, 0)
         this._controls.update()
 
@@ -65,10 +70,11 @@ export class World {
         this._camera2.position.set(40, 10, 30)
         this._camera2.lookAt(0, 5, 0)
 
-        this._controls2 = new OrbitControls(this._camera2, (view2Elem as HTMLElement))
+        this._controls2 = new OrbitControls(this._camera2, this.view2Elem)
         this._controls2.target.set(0, 5, 0) 
         this._controls2.update()
 
+        this._controls2.addEventListener('change', () => this._onChangeHandler())
 
 
         // camProps.add(this._camera.position, 'x').name('pos-x').min(0).max(10).step(1)
@@ -99,8 +105,56 @@ export class World {
         this._scene.add(ambLight)
 
         window.addEventListener('resize', () => this._onChangeHandler(), false)
+    }
+
+    /*
+        we need to render the scene from the point of view of each camera
+        using the scissor to only render to part of the canvas
+
+        given an element this function will compute the rectangle of that element
+        that overlaps the canvas. It will then set the scissor and viewport to
+        that rectangle and return the aspect size.
+    */
+
+
+    resizeRendererToDisplaySize(){
+        console.log('i am inside resizeRenderToDisplaySize function')
+        console.log(this)
+        const canvas     = this._renderer.domElement
+        const width = canvas.clientWidth
+        const height = canvas.clientHeight
+        const needResize = canvas.width !== width || canvas.height !== height
+        if(needResize){
+            this._renderer.setSize(width, height, false)
+        }
+        return needResize
+    }
+
+    setScissorForElement(elem: HTMLElement){
+        const canvas     = document.querySelector('#c')!
+        const canvasRect = canvas.getBoundingClientRect()
+        const elemRect   = elem.getBoundingClientRect()
+
+
+        // compute a canvas relative rectangle
+        const right  = Math.min(elemRect.right, canvasRect.right) - canvasRect.left
+        const left   = Math.max(0, elemRect.left - canvasRect.left)
+        const bottom = Math.min(elemRect.bottom, canvasRect.bottom) - canvasRect.top
+        const top    = Math.max(0, elemRect.top - canvasRect.top )
+
+        const width  = Math.min(canvasRect.width, right - left)
+        const height = Math.min(canvasRect.height, bottom - top)
+
+        // setup the scissor to only render to that part of the canvas
+        const positiveYUpBottom = canvasRect.height
+        this._renderer.setScissor(left, positiveYUpBottom, width, height)
+        this._renderer.setViewport(left, positiveYUpBottom, width, height)
+
+        // return the aspect
+        return width / height
 
     }
+    
 
     updateCamera(){
         console.log('Camera updating but not rerendering')
@@ -127,29 +181,68 @@ export class World {
         // if(!this.clock.running){
         //     this.clock.start()
         // }
-        if(window.sceneObjects.controlledObjs.length > 0){
-            window.sceneObjects.controlledObjs.forEach(obj => {
-                // let mixerUpdateDelta = this.clock.getDelta()
-                obj.update(2)
-            })
+        // if(window.sceneObjects.controlledObjs.length > 0){
+        //     window.sceneObjects.controlledObjs.forEach(obj => {
+        //         // let mixerUpdateDelta = this.clock.getDelta()
+        //         obj.update(2)
+        //     })
             
-            console.log('window.world: ', window.world)
-            console.log('this: ', this)
-            this._controls.update()
+        //     console.log('window.world: ', window.world)
+        //     console.log('this: ', this)
+        //     this._controls.update()
+        //     this._renderer.render(this._scene, this._camera)
+        //     requestAnimationFrame(this.render)
+        //     console.log('rendering with animated objects')
+        // }else{
+        //     this._renderer.render(this._scene, this._camera)
+        //     console.log('rendering without animated objects')
+        // }
+        // console.log(this)
+        // console.log(window.world)
+        this.resizeRendererToDisplaySize()
+
+        // turn on the scissor
+        this._renderer.setScissorTest(true)
+
+
+        // render the original view
+        {
+            const aspect = this.setScissorForElement(this.view1Elem)
+
+            // adjust the camera this aspect
+            this._camera.aspect = aspect
+            this._camera.updateMatrix()
+            this.cameraHelper.update()
+
+            // dont draw the camera helper in the original view
+            this.cameraHelper.visible = false
+
+            this._scene.background = new Color(0x000000)
+
+            // render
             this._renderer.render(this._scene, this._camera)
-            requestAnimationFrame(this.render)
-            console.log('rendering with animated objects')
-        }else{
-            this._renderer.render(this._scene, this._camera)
-            console.log('rendering without animated objects')
         }
+
+        // render from the second camera
+        {
+            const aspect = this.setScissorForElement(this.view2Elem)
+
+            // adjust the camera for this aspect
+            this._camera2.aspect = aspect
+            this._camera2.updateProjectionMatrix()
+
+            // draw the camera helper in the second view
+            this.cameraHelper.visible = true
+
+            this._scene.background = new Color(0x000040)
+
+            this._renderer.render(this._scene, this._camera2)
+        }
+
+        // requestAnimationFrame(this.render.bind(this))
     }
 
     _onChangeHandler(){
-        this._camera.aspect = window.innerWidth / window.innerHeight
-        this._camera.updateProjectionMatrix()
-
-        this._renderer.setSize(window.innerWidth, window.innerHeight)
         this.render()
     }
 }
