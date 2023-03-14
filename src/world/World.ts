@@ -1,4 +1,4 @@
-import { Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight
+import { Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, Clock
  } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import createRenderer from './components/renderer'
@@ -8,16 +8,19 @@ import createCamera from './components/camera'
 import createScene from './components/scene'
 import createPlane from './components/plane'
 import createCube from './components/cube'
+import startEditor from './components/editor'
 
 
 export default class World {
     renderer:   WebGLRenderer
     scene:      Scene
     light:      DirectionalLight
+    clock:      Clock
 
     camera:     PerspectiveCamera
     controls:   OrbitControls
 
+    editMode = false
 
     sceneObjects!: [any]
 
@@ -25,6 +28,7 @@ export default class World {
         this.renderer = createRenderer(canvas)
         this.scene    = createScene()
         this.camera   = createCamera()
+        this.clock    = new Clock()
 
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
         this.controls.target.set(0, 5, 0);
@@ -66,8 +70,12 @@ export default class World {
 
 
     render(resize: boolean = false){
+        let mixerUpdateDelta = this.clock.getDelta()
         if(resize){
             this.resize()
+        }
+        if(this.editMode){
+            // start editor
         }
         
         this.renderer.render(this.scene, this.camera)
