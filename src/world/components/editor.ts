@@ -26,22 +26,22 @@ function setScissorForElement(world: World, elem: any) {
     return width / height;
 }
 
-function startEditorDislpay(world: World, view1El: any, view2El: any, camera2: PerspectiveCamera, cameraHelper: CameraHelper){
+function startEditorDislpay(world: World, props: {view1El: any, view2El: any, camera2: PerspectiveCamera, cameraHelper: CameraHelper}){
 
     // turn on the scissor
     world.renderer.setScissorTest(true);
 
     // render the original view
     {
-        const aspect = setScissorForElement(world, view1El);
+        const aspect = setScissorForElement(world, props.view1El);
 
         // adjust the camera for this aspect
         world.camera.aspect = aspect;
         world.camera.updateProjectionMatrix();
-        cameraHelper.update();
+        props.cameraHelper.update();
 
         // don't draw the camera helper in the original view
-        cameraHelper.visible = false;
+        props.cameraHelper.visible = false;
 
         // scene.background.set(0x000000);
         world.scene.background = new Color(0x000000)
@@ -52,28 +52,31 @@ function startEditorDislpay(world: World, view1El: any, view2El: any, camera2: P
 
     // render from the 2nd camera
     {
-        const aspect = setScissorForElement(world, view2El);
+        const aspect = setScissorForElement(world, props.view2El);
 
         // adjust the camera for this aspect
-        camera2.aspect = aspect;
-        camera2.updateProjectionMatrix();  //   const sphereRadius = 3;
+        props.camera2.aspect = aspect;
+        props.camera2.updateProjectionMatrix();  //   const sphereRadius = 3;
 
 
         // draw the camera helper in the 2nd view
-        cameraHelper.visible = true;
+        props.cameraHelper.visible = true;
 
         world.scene.background = new Color(0x000040);
 
-        world.renderer.render(world.scene, camera2);
+        world.renderer.render(world.scene, props.camera2);
     }
 }
 
 function startEditor(world: World){
 
     const cameraHelper = new CameraHelper(world.camera);
-    
-    const view1Elem = document.querySelector('#view1')!;
-    const view2Elem = document.querySelector('#view2')!;
+
+    let splitElem = document.querySelector('.split')! as HTMLElement
+    splitElem.style.setProperty('display', 'flex')
+
+    const view1El = document.querySelector('#view1')! as HTMLElement;
+    const view2El = document.querySelector('#view2')! as HTMLElement;
     const camera2 = new PerspectiveCamera(
         60,  // fov
         2,   // aspect
@@ -83,16 +86,32 @@ function startEditor(world: World){
     camera2.position.set(40, 10, 30);
     camera2.lookAt(0, 5, 0);
 
-    const controls2 = new OrbitControls(camera2, (view2Elem as HTMLElement));
+    // world.controls.domElement = view1El
+    // world.controls.update()
+    // console.log(world.controls)
+
+    const controls = new OrbitControls(world.camera, view1El)
+    controls.target.set(0, 5, 0)
+    controls.update()
+    controls.addEventListener('change', () => {
+        console.log('controls event handler')
+        world.render()
+    })
+
+    const controls2 = new OrbitControls(camera2, view2El);
     controls2.target.set(0, 5, 0);
     controls2.update();
-    controls2.addEventListener('change', () => world.render())
+    controls2.addEventListener('change', () => {
+        console.log('controls2 event handler')
+        world.render()})
 
     world.scene.add(cameraHelper);
 
-    startEditorDislpay(world, view1Elem, view2Elem, camera2, cameraHelper)
+    return {view1El, view2El, camera2, cameraHelper}
+
+    // startEditorDislpay(world, view1Elem, view2Elem, camera2, cameraHelper)
 }
 
 
 
-export default startEditor
+export { startEditor, startEditorDislpay }

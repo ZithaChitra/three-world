@@ -8,8 +8,7 @@ import createCamera from './components/camera'
 import createScene from './components/scene'
 import createPlane from './components/plane'
 import createCube from './components/cube'
-import startEditor from './components/editor'
-
+import { startEditor, startEditorDislpay } from './components/editor'
 
 export default class World {
     renderer:   WebGLRenderer
@@ -21,6 +20,7 @@ export default class World {
     controls:   OrbitControls
 
     editMode = false
+    editorProps!: any
 
     sceneObjects!: [any]
 
@@ -49,6 +49,10 @@ export default class World {
         addGltfToScene(soldierPath, this)
 
 
+        if(this.editMode){
+            this.editorProps = startEditor(this)  
+        }
+
         window.addEventListener('resize',() => this.render(true))
     }
 
@@ -75,10 +79,11 @@ export default class World {
             this.resize()
         }
         if(this.editMode){
-            // start editor
+            startEditorDislpay(this, this.editorProps)
+        }else{
+            this.renderer.render(this.scene, this.camera)
         }
-        
-        this.renderer.render(this.scene, this.camera)
         requestAnimationFrame(() => this.render())
+        
     }
 }
