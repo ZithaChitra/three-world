@@ -3,12 +3,12 @@ import { Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight,
 import { startEditor, startEditorDislpay } from './components/editor'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import createRenderer from './components/renderer'
-import addGltfToScene from '../models/loaders/gltf'
 import createLights from './components/lights'
 import createCamera from './components/camera'
 import createScene from './components/scene'
 import createPlane from './components/plane'
 import createCube from './components/cube'
+import Model from '../models/base/Model'
 
 export default class World {
     renderer:   WebGLRenderer
@@ -46,7 +46,9 @@ export default class World {
         this.scene.add(plane)
 
         const soldierPath = '/models/Soldier.glb'
-        addGltfToScene(soldierPath, this)
+        let soldier = new Model('gltf')
+        soldier.loadModel(soldierPath, this)
+        // addGltfToScene(soldierPath, this)
 
 
         if(this.editMode){

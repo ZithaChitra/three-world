@@ -13,11 +13,6 @@ const D = 'd'
 const SHIFT = 'shift'
 const DIRECTIONS = [W, A, S, D]
 
-class gltfModel extends Model {
-    constructor(){
-        super('gltf')
-    }
-}
 export function gltfLoader(path: string, world: World, charControls: boolean = false){
     const loader = new GLTFLoader()
 
@@ -35,6 +30,7 @@ export function gltfLoader(path: string, world: World, charControls: boolean = f
         gltfAnimations.filter(a => a.name != 'TPose').forEach((a: AnimationClip) => {
             animationsMap.set(a.name, mixer.clipAction(a))
         })
+        
 
         // characterControls = new CharacterControls(model, mixer, animationsMap, controls, camera, 'Idle')
         // if (keysPressed[W]) {

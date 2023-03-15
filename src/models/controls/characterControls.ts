@@ -54,7 +54,6 @@ export class CharacterControls {
 
     switchRunToggle(){
         this.toggleRun = !this.toggleRun
-    
     }
 
     public update(delta: number, keysPressed: any){
