@@ -1,5 +1,6 @@
-import { Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, Clock
- } from 'three'
+import { Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, 
+    Clock} from 'three'
+import { startEditor, startEditorDislpay } from './components/editor'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import createRenderer from './components/renderer'
 import addGltfToScene from '../models/loaders/gltf'
@@ -8,7 +9,6 @@ import createCamera from './components/camera'
 import createScene from './components/scene'
 import createPlane from './components/plane'
 import createCube from './components/cube'
-import { startEditor, startEditorDislpay } from './components/editor'
 
 export default class World {
     renderer:   WebGLRenderer

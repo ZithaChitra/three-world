@@ -284,9 +284,6 @@ function main(){
     const canvas = document.querySelector('#c')!;
     const world = new World((canvas as HTMLCanvasElement));
     world.render()
-    // requestAnimationFrame(() => {
-    //     console.log('hello friend');
-    //     world.render()})
 }
 
 
