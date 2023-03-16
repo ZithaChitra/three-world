@@ -19,10 +19,12 @@ export default class World {
     camera:     PerspectiveCamera
     controls:   OrbitControls
 
-    editMode = false
+    editMode = true
     editorProps!: any
 
     sceneObjects!: [any]
+
+    soldier: Model | null = null
 
     constructor(canvas: HTMLCanvasElement){
         this.renderer = createRenderer(canvas)
@@ -46,8 +48,8 @@ export default class World {
         this.scene.add(plane)
 
         const soldierPath = '/models/Soldier.glb'
-        let soldier = new Model('gltf')
-        soldier.loadModel(soldierPath, this)
+        this.soldier = new Model('gltf')
+        this.soldier.loadModel(soldierPath, this)
         // addGltfToScene(soldierPath, this)
 
 
@@ -77,6 +79,10 @@ export default class World {
 
     render(resize: boolean = false){
         let mixerUpdateDelta = this.clock.getDelta()
+        if(this.soldier){
+            this.soldier.controls?.update(mixerUpdateDelta, this.soldier.keysPressed)
+        }
+
         if(resize){
             this.resize()
         }

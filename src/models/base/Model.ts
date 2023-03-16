@@ -1,22 +1,16 @@
 import { CharacterControls } from '../controls/characterControls';
-import World from '../../world/World';
 import { gltfLoader } from '../loaders/gltf';
 import { Group } from 'three';
+import World from '../../world/World';
 
 
 export default class Model {
 
     modelTypes: {} = {gltf: gltfLoader};
-    model: Group | null = null
     type: string | null
-
+    
+    model: Group | null = null
     controls: CharacterControls | null = null
-    W = 'w'
-    A = 'a'
-    S = 's'
-    D = 'd'
-    SHIFT      = 'shift'
-    DIRECTIONS = [this.W, this.A, this.S, this.D]
 
     directionOffset: number 
     keysPressed: any 
@@ -27,20 +21,17 @@ export default class Model {
         this.keysPressed     = {}
     }
 
-    loadModel(path: string, world: World, charControls: boolean = false){
+    loadModel(path: string, world: World, charControls: boolean = true){
         if(this.type && this.type in this.modelTypes){
             switch(this.type){
                 case('gltf'):
-                    gltfLoader(path, world, charControls) 
+                    gltfLoader(path, world, true, this) 
                     break;
                 default:
                     break
             }
             if(charControls){
                 this.initControllerEvents()
-                this.controls = new CharacterControls(model, mixer, animationsMap, controls, camera, 'Idle')
-
-
             }
         }
     } 
@@ -57,6 +48,7 @@ export default class Model {
         
         document.addEventListener('keyup', (event) => {
             (this.keysPressed as any)[event.key.toLowerCase()] = false
+            console.log(this.keysPressed)
         }, false);
     }
 }
