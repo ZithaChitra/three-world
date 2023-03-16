@@ -1,6 +1,8 @@
-import World from "../World";
 import { PerspectiveCamera, CameraHelper, Color } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import MinMaxGUIHelper from "./util/guiHelper";
+import { GUI } from 'lil-gui'
+import World from "../World";
 
 
 
@@ -90,6 +92,15 @@ function startEditor(world: World){
     // world.controls.update()
     // console.log(world.controls)
 
+    let gui = new GUI()
+    gui.onChange(() => world.render())
+    gui.add(world.camera, 'fov', 1, 180);
+    const minMaxGUIHelper = new MinMaxGUIHelper(world.camera, 'near', 'far', 0.1);
+    gui.add(minMaxGUIHelper, 'min', 0.1, 50, 0.1).name('near');
+    gui.add(minMaxGUIHelper, 'max', 0.1, 50, 0.1).name('far');
+
+
+
     const controls = new OrbitControls(world.camera, view1El)
     controls.target.set(0, 5, 0)
     controls.update()
@@ -109,7 +120,6 @@ function startEditor(world: World){
 
     return {view1El, view2El, camera2, cameraHelper}
 
-    // startEditorDislpay(world, view1Elem, view2Elem, camera2, cameraHelper)
 }
 
 
